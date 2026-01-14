@@ -1,0 +1,111 @@
+name: Complex Workflow Pressure Test
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  setup-job:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup
+      run: |
+        echo "Setting up test data"
+        echo "$(date)" > timestamp.txt
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-data
+        path: timestamp.txt
+
+  dependent-job:
+    needs: setup-job
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: test-data
+
+    - name: Process data
+      run: |
+        echo "Processing artifact"
+        cat timestamp.txt
+        echo "Artifact received successfully" >> result.txt
+
+    - name: Upload result
+      uses: actions/upload-artifact@v4
+      with:
+        name: result
+        path: result.txt
+
+  parallel-job-1:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job 1
+      run: |
+        echo "Parallel job 1 running"
+        sleep 5
+        echo "Job 1 complete" > job1.txt
+
+    - name: Upload job 1 result
+      uses: actions/upload-artifact@v4
+      with:
+        name: job1-result
+        path: job1.txt
+
+  parallel-job-2:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job 2
+      run: |
+        echo "Parallel job 2 running"
+        sleep 5
+        echo "Job 2 complete" > job2.txt
+
+    - name: Upload job 2 result
+      uses: actions/upload-artifact@v4
+      with:
+        name: job2-result
+        path: job2.txt
+
+  parallel-job-3:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job 3
+      run: |
+        echo "Parallel job 3 running"
+        sleep 5
+        echo "Job 3 complete" > job3.txt
+
+    - name: Upload job 3 result
+      uses: actions/upload-artifact@v4
+      with:
+        name: job3-result
+        path: job3.txt
+
+  final-aggregation:
+    needs: [dependent-job, parallel-job-1, parallel-job-2, parallel-job-3]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Aggregate results
+      run: |
+        echo "=== Final Aggregation ===" > final-report.txt
+        echo "" >> final-report.txt
+        cat result/result.txt >> final-report.txt
+        echo "" >> final-report.txt
+        cat job1-result/job1.txt >> final-report.txt
+        cat job2-result/job2.txt >> final-report.txt
+        cat job3-result/job3.txt >> final-report.txt
+        cat final-report.txt
+
+    - name: Upload final report
+      uses: actions/upload-artifact@v4
+      with:
+        name: final-report
+        path: final-report.txt

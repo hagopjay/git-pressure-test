@@ -1,0 +1,37 @@
+name: Matrix Pressure Test
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  matrix-job:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [14, 16, 18]
+      max-parallel: 9
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Test on ${{ matrix.os }} with Node ${{ matrix.node }}
+      run: |
+        echo "Running on ${{ matrix.os }}"
+        echo "Node version: ${{ matrix.node }}"
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          echo "Linux runner detected"
+          df -h
+          free -h
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+          echo "Windows runner detected"
+          systeminfo | findstr /C:"Total Physical Memory"
+        else
+          echo "macOS runner detected"
+          df -h
+          vm_stat
+        fi
+      shell: bash
